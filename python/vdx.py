@@ -103,12 +103,6 @@ def majority_voting_bootstrapping(input, error):
                     break
             else:
                 groups.append([value])
-    #print("groups:", groups)
-    # Count the size of groups vs sample size
-    #for i in range(len(groups)):
-    #    if len(groups[i]) > 0.5*len(input):
-    #        #print(groups)
-    #        return sum(groups[i])/len(groups[i])
     max_length = 0
     max_index = 0
     for i in range(len(groups)):
@@ -116,7 +110,6 @@ def majority_voting_bootstrapping(input, error):
             max_length = len(groups[i])
             max_index = i
     return sum(groups[max_index])/len(groups[max_index])
-    #return average(input)
 
 # Collation
 
