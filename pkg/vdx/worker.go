@@ -15,7 +15,7 @@ type Result struct {
 func ProcessJobs(jobs <-chan Job, results chan<- Result, numWorkers int, voteFunc func([]float64) float64) {
 	var wg sync.WaitGroup
 	wg.Add(numWorkers)
-	for w := 0; w < numWorkers; w++ {
+	for range numWorkers {
 		go func() {
 			defer wg.Done()
 			for job := range jobs {
