@@ -1,20 +1,24 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
+	"runtime"
 
 	"example.com/vdx/pkg/vdx"
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Usage: vdxcli <input.csv>")
+	var numWorkers int
+	flag.IntVar(&numWorkers, "j", runtime.NumCPU(), "number of parallel jobs")
+	flag.Parse()
+	if flag.NArg() < 1 {
+		fmt.Println("Usage: vdxcli [-j N] <input.csv>")
 		os.Exit(1)
 	}
-	inputFile := os.Args[1]
+	inputFile := flag.Arg(0)
 	outputFile := "output.csv"
-	numWorkers := 12
 
 	jobs, err := vdx.ReadCSVRows(inputFile)
 	if err != nil {
