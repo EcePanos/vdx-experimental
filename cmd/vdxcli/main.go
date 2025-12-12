@@ -27,8 +27,8 @@ func main() {
 	}
 	results := make(chan vdx.Result, numWorkers*2)
 	go vdx.ProcessJobs(jobs, results, numWorkers, func(data []float64) float64 {
-		history := vdx.Initialize_history(len(data))
-		weights := vdx.Initialize_weights(len(data))
+		history := vdx.NewHistory(len(data))
+		weights := vdx.NewWeights(len(data))
 		result, _, _ := vdx.VoteNumeric(history, weights, data, 0.05, 2, "nearest_neighbor", "history_based_hybrid_voting", true)
 		return result
 	})

@@ -4,6 +4,11 @@ import (
 	"math"
 )
 
+// Type Definitions
+
+type History [][]float64
+type Weights []float64
+
 // Utility Functions
 
 func sum(nums []float64) float64 {
@@ -43,7 +48,7 @@ func nearest_neighbor(nums []float64, target float64) float64 {
 	return nearest
 }
 
-func weighted_average(nums []float64, weights []float64) float64 {
+func weighted_average(nums []float64, weights Weights) float64 {
 	if len(nums) == 0 || len(nums) != len(weights) {
 		return 0
 	}
@@ -58,7 +63,7 @@ func weighted_average(nums []float64, weights []float64) float64 {
 	return weightedSum / totalWeight
 }
 
-func weighted_majority_voting(choices []string, weights []float64) string {
+func weighted_majority_voting(choices []string, weights Weights) string {
 	if len(choices) == 0 || len(choices) != len(weights) {
 		return ""
 	}
@@ -83,8 +88,8 @@ func weighted_majority_voting(choices []string, weights []float64) string {
 // for each module we keep track of how many times it was included in the winning result
 // and how many times it was considered (included in the candidate set)
 
-func Initialize_history(num_modules int) [][]float64 {
-	history := make([][]float64, num_modules)
+func NewHistory(num_modules int) History {
+	history := make(History, num_modules)
 	for i := range history {
 		history[i] = []float64{0, 0} // [successes, rounds]
 	}
@@ -92,7 +97,7 @@ func Initialize_history(num_modules int) [][]float64 {
 }
 
 // check whether all numbers in the slice are zero, that means we are in the bootstrapping phase
-func check_history_exists(history [][]float64) bool {
+func check_history_exists(history History) bool {
 	for _, moduleHistory := range history {
 		if moduleHistory[0] > 0 || moduleHistory[1] > 0 {
 			return true
@@ -105,7 +110,7 @@ func check_history_exists(history [][]float64) bool {
 // for each module, we calculate if it was included in the winning result
 // if yes, we increment the first element of its history by 1
 // in any case, we increment the second element of its history by 1
-func update_history_standard(history [][]float64, input_data []float64, error_margin float64) [][]float64 {
+func update_history_standard(history History, input_data []float64, error_margin float64) History {
 	successes := make([]float64, len(history))
 	rounds := make([]float64, len(history))
 	// initialize the successes and rounds slices
@@ -114,10 +119,10 @@ func update_history_standard(history [][]float64, input_data []float64, error_ma
 		rounds[i] = history[i][1]
 	}
 	// initialize the new history
-	new_history := make([][]float64, len(history))
-	for i := range len(input_data) {
+	new_history := NewHistory(len(history))
+	for i := range input_data {
 		s := float64(0)
-		for y := range len(input_data) {
+		for y := range input_data {
 			if i != y && input_data[i] >= (1-error_margin)*input_data[y] && input_data[i] <= (1+error_margin)*input_data[y] {
 				s++
 			}
@@ -134,7 +139,7 @@ func update_history_standard(history [][]float64, input_data []float64, error_ma
 // Standard history update for alpha modules
 // Since we cannot compute error margins for alpha modules, we consider a comparison successful
 // if the module's output matches any other module's output exactly
-func update_history_alpha(history [][]float64, input_data []string) [][]float64 {
+func update_history_alpha(history History, input_data []string) History {
 	successes := make([]float64, len(history))
 	rounds := make([]float64, len(history))
 	// initialize the successes and rounds slices
@@ -143,10 +148,10 @@ func update_history_alpha(history [][]float64, input_data []string) [][]float64 
 		rounds[i] = history[i][1]
 	}
 	// initialize the new history
-	new_history := make([][]float64, len(history))
-	for i := range len(input_data) {
+	new_history := NewHistory(len(history))
+	for i := range input_data {
 		s := float64(0)
-		for y := range len(input_data) {
+		for y := range input_data {
 			if i != y && input_data[i] == input_data[y] {
 				s++
 			}
@@ -165,7 +170,7 @@ func update_history_alpha(history [][]float64, input_data []string) [][]float64 
 // and then we can calculate a partial success, if a module is not successful
 // but its output is within error * scaling factor of the winning value
 // in that case the s value is not an integer, but a value between 0 and 1
-func update_history_hybrid(history [][]float64, weights []float64, input_data []float64, error_margin float64, scaling_factor float64) (float64, [][]float64, []float64) {
+func update_history_hybrid(history History, weights Weights, input_data []float64, error_margin float64, scaling_factor float64) (float64, History, Weights) {
 	winning_value := weighted_average(input_data, weights)
 	successes := make([]float64, len(history))
 	rounds := make([]float64, len(history))
@@ -175,10 +180,10 @@ func update_history_hybrid(history [][]float64, weights []float64, input_data []
 		rounds[i] = history[i][1]
 	}
 	// initialize the new history
-	new_history := make([][]float64, len(history))
-	for i := range len(input_data) {
+	new_history := NewHistory(len(history))
+	for i := range input_data {
 		s := float64(0)
-		for y := range len(input_data) {
+		for y := range input_data {
 			if i != y && input_data[i] >= (1-error_margin)*input_data[y] && input_data[i] <= (1+error_margin)*input_data[y] {
 				s++
 			} else if i != y && input_data[i] >= (1-error_margin*scaling_factor)*input_data[y] && input_data[i] <= (1+error_margin*scaling_factor)*input_data[y] {
@@ -207,8 +212,8 @@ func update_history_hybrid(history [][]float64, weights []float64, input_data []
 // Weight calculation functions
 
 // Initialize weights as 1
-func Initialize_weights(num_modules int) []float64 {
-	weights := make([]float64, num_modules)
+func NewWeights(num_modules int) Weights {
+	weights := make(Weights, num_modules)
 	for i := range weights {
 		weights[i] = 1.0
 	}
@@ -217,10 +222,10 @@ func Initialize_weights(num_modules int) []float64 {
 
 // Standard weight calculation function
 // the weight of each module is the square of its success rate
-func calculate_weights_standard(history [][]float64) []float64 {
+func calculate_weights_standard(history History) Weights {
 	successes := make([]float64, len(history))
 	rounds := make([]float64, len(history))
-	weights := make([]float64, len(history))
+	weights := make(Weights, len(history))
 	for i := range history {
 		successes[i] = history[i][0]
 		rounds[i] = history[i][1]
@@ -231,10 +236,10 @@ func calculate_weights_standard(history [][]float64) []float64 {
 
 // Weight calculation with module elimination
 // if a module's success rate is below the average success rate across all modules, its weight is set to zero
-func calculate_weights_elimination(history [][]float64) []float64 {
+func calculate_weights_elimination(history History) Weights {
 	successes := make([]float64, len(history))
 	rounds := make([]float64, len(history))
-	weights := make([]float64, len(history))
+	weights := make(Weights, len(history))
 	var totalSuccessRate float64
 	for i := range history {
 		successes[i] = history[i][0]
@@ -297,11 +302,11 @@ func no_history_voting(input_data []float64, error_margin float64, use_clusterin
 }
 
 // History-based weighted average
-func history_based_weighted_average(history [][]float64, input_data []float64, error_margin float64, bootstrap bool) (float64, [][]float64, []float64) {
+func history_based_weighted_average(history History, input_data []float64, error_margin float64, bootstrap bool) (float64, History, Weights) {
 	// check if the history exists
 	if !check_history_exists(history) {
 		// initialize weights
-		weights := Initialize_weights(len(history))
+		weights := NewWeights(len(history))
 		// since the weights are still equal, fall back to the no history voting
 		result := no_history_voting(input_data, error_margin, bootstrap)
 		new_history := update_history_standard(history, input_data, error_margin)
@@ -317,11 +322,11 @@ func history_based_weighted_average(history [][]float64, input_data []float64, e
 }
 
 // History-based weighted average with module elimination
-func history_based_weighted_average_elimination(history [][]float64, input_data []float64, error_margin float64, bootstrap bool) (float64, [][]float64, []float64) {
+func history_based_weighted_average_elimination(history History, input_data []float64, error_margin float64, bootstrap bool) (float64, History, Weights) {
 	// check if the history exists
 	if !check_history_exists(history) {
 		// initialize weights
-		weights := Initialize_weights(len(history))
+		weights := NewWeights(len(history))
 		// since the weights are still equal, fall back to the no history voting
 		result := no_history_voting(input_data, error_margin, bootstrap)
 		new_history := update_history_standard(history, input_data, error_margin)
@@ -337,7 +342,7 @@ func history_based_weighted_average_elimination(history [][]float64, input_data 
 }
 
 // History-based hybrid voting
-func history_based_hybrid_voting(history [][]float64, weights []float64, input_data []float64, error_margin float64, scaling_factor float64, bootstrap bool) (float64, [][]float64, []float64) {
+func history_based_hybrid_voting(history History, weights Weights, input_data []float64, error_margin float64, scaling_factor float64, bootstrap bool) (float64, History, Weights) {
 	// check if the history exists
 	if !check_history_exists(history) {
 		// since the weights are still equal, fall back to the no history voting
@@ -355,20 +360,20 @@ func history_based_hybrid_voting(history [][]float64, weights []float64, input_d
 
 // No history voting for alpha modules
 // this also initializes the weights and history for alpha modules
-func no_history_voting_alpha(input_data []string, history [][]float64) (string, [][]float64) {
+func no_history_voting_alpha(input_data []string, history History) (string, History) {
 	// initialize history
-	new_history := Initialize_history(len(history))
+	new_history := NewHistory(len(history))
 	// perform majority voting
-	result := weighted_majority_voting(input_data, Initialize_weights(len(history)))
+	result := weighted_majority_voting(input_data, NewWeights(len(history)))
 	return result, new_history
 }
 
 // History-based weighted majority voting for alpha modules
-func history_based_weighted_majority_voting(history [][]float64, input_data []string) (string, [][]float64, []float64) {
+func history_based_weighted_majority_voting(history History, input_data []string) (string, History, Weights) {
 	// check if the history exists
 	if !check_history_exists(history) {
 		// initialize weights
-		weights := Initialize_weights(len(history))
+		weights := NewWeights(len(history))
 		// since the weights are still equal, fall back to the no history voting
 		result, new_history := no_history_voting_alpha(input_data, history)
 		return result, new_history, weights
@@ -383,11 +388,11 @@ func history_based_weighted_majority_voting(history [][]float64, input_data []st
 }
 
 // History-based weighted majority voting with module elimination for alpha modules
-func history_based_weighted_majority_voting_elimination(history [][]float64, input_data []string) (string, [][]float64, []float64) {
+func history_based_weighted_majority_voting_elimination(history History, input_data []string) (string, History, Weights) {
 	// check if the history exists
 	if !check_history_exists(history) {
 		// initialize weights
-		weights := Initialize_weights(len(history))
+		weights := NewWeights(len(history))
 		// since the weights are still equal, fall back to the no history voting
 		result, new_history := no_history_voting_alpha(input_data, history)
 		return result, new_history, weights
@@ -404,10 +409,10 @@ func history_based_weighted_majority_voting_elimination(history [][]float64, inp
 // Public API Functions
 
 // Numeric voting function
-func VoteNumeric(history [][]float64, weights []float64, input_data []float64, error_margin float64, scaling_factor float64, collation string, history_algorithm string, bootstrap bool) (float64, [][]float64, []float64) {
+func VoteNumeric(history History, weights Weights, input_data []float64, error_margin float64, scaling_factor float64, collation string, history_algorithm string, bootstrap bool) (float64, History, Weights) {
 	var result float64
-	var new_history [][]float64
-	var new_weights []float64
+	var new_history History
+	var new_weights Weights
 
 	switch history_algorithm {
 	case "no_history":
@@ -434,10 +439,10 @@ func VoteNumeric(history [][]float64, weights []float64, input_data []float64, e
 }
 
 // Alpha voting function
-func VoteAlpha(history [][]float64, input_data []string, history_algorithm string) (string, [][]float64, []float64) {
+func VoteAlpha(history History, input_data []string, history_algorithm string) (string, History, Weights) {
 	var result string
-	var new_history [][]float64
-	var new_weights []float64
+	var new_history History
+	var new_weights Weights
 
 	switch history_algorithm {
 	case "no_history":
