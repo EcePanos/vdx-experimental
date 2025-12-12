@@ -111,14 +111,6 @@ func check_history_exists(history History) bool {
 // if yes, we increment the first element of its history by 1
 // in any case, we increment the second element of its history by 1
 func update_history_standard(history History, input_data []float64, error_margin float64) History {
-	successes := make([]float64, len(history))
-	rounds := make([]float64, len(history))
-	// initialize the successes and rounds slices
-	for i := range history {
-		successes[i] = history[i][0]
-		rounds[i] = history[i][1]
-	}
-	// initialize the new history
 	new_history := NewHistory(len(history))
 	for i := range input_data {
 		s := float64(0)
@@ -127,11 +119,15 @@ func update_history_standard(history History, input_data []float64, error_margin
 				s++
 			}
 		}
+		// Copy previous values
+		successes := history[i][0]
+		rounds := history[i][1]
 		if s > float64(len(input_data)-1)/2 {
-			successes[i]++
+			successes++
 		}
-		rounds[i]++
-		new_history[i] = []float64{successes[i], rounds[i]}
+		rounds++
+		new_history[i][0] = successes
+		new_history[i][1] = rounds
 	}
 	return new_history
 }
@@ -140,14 +136,6 @@ func update_history_standard(history History, input_data []float64, error_margin
 // Since we cannot compute error margins for alpha modules, we consider a comparison successful
 // if the module's output matches any other module's output exactly
 func update_history_alpha(history History, input_data []string) History {
-	successes := make([]float64, len(history))
-	rounds := make([]float64, len(history))
-	// initialize the successes and rounds slices
-	for i := range history {
-		successes[i] = history[i][0]
-		rounds[i] = history[i][1]
-	}
-	// initialize the new history
 	new_history := NewHistory(len(history))
 	for i := range input_data {
 		s := float64(0)
@@ -156,11 +144,14 @@ func update_history_alpha(history History, input_data []string) History {
 				s++
 			}
 		}
-		if s > float64(0) {
-			successes[i]++
+		successes := history[i][0]
+		rounds := history[i][1]
+		if s > 0 {
+			successes++
 		}
-		rounds[i]++
-		new_history[i] = []float64{successes[i], rounds[i]}
+		rounds++
+		new_history[i][0] = successes
+		new_history[i][1] = rounds
 	}
 	return new_history
 }
@@ -172,14 +163,6 @@ func update_history_alpha(history History, input_data []string) History {
 // in that case the s value is not an integer, but a value between 0 and 1
 func update_history_hybrid(history History, weights Weights, input_data []float64, error_margin float64, scaling_factor float64) (float64, History, Weights) {
 	winning_value := weighted_average(input_data, weights)
-	successes := make([]float64, len(history))
-	rounds := make([]float64, len(history))
-	// initialize the successes and rounds slices
-	for i := range history {
-		successes[i] = float64(history[i][0])
-		rounds[i] = history[i][1]
-	}
-	// initialize the new history
 	new_history := NewHistory(len(history))
 	for i := range input_data {
 		s := float64(0)
@@ -194,13 +177,16 @@ func update_history_hybrid(history History, weights Weights, input_data []float6
 		s_total := float64(s / float64(len(input_data)-1))
 		k := math.Abs(input_data[i] - winning_value)
 		e := error_margin * winning_value
+		successes := history[i][0]
+		rounds := history[i][1]
 		if k <= e {
-			successes[i]++
+			successes++
 		} else if k > e && k <= e*scaling_factor {
-			successes[i] += (scaling_factor / (scaling_factor - 1)) * (1 - (k / (e * scaling_factor)))
+			successes += (scaling_factor / (scaling_factor - 1)) * (1 - (k / (e * scaling_factor)))
 		}
-		new_history[i] = []float64{float64(successes[i]), rounds[i] + 1}
-		if successes[i] > sum(successes)/float64(len(successes)) {
+		new_history[i][0] = successes
+		new_history[i][1] = rounds + 1
+		if successes > sum(history[i][:1])/float64(1) { // sum(history[i][:1]) is just successes, but kept for clarity
 			weights[i] = s_total
 		} else {
 			weights[i] = 0
@@ -223,13 +209,11 @@ func NewWeights(num_modules int) Weights {
 // Standard weight calculation function
 // the weight of each module is the square of its success rate
 func calculate_weights_standard(history History) Weights {
-	successes := make([]float64, len(history))
-	rounds := make([]float64, len(history))
 	weights := make(Weights, len(history))
 	for i := range history {
-		successes[i] = history[i][0]
-		rounds[i] = history[i][1]
-		weights[i] = (successes[i] / rounds[i]) * (successes[i] / rounds[i])
+		successes := history[i][0]
+		rounds := history[i][1]
+		weights[i] = (successes / rounds) * (successes / rounds)
 	}
 	return weights
 }
@@ -237,19 +221,15 @@ func calculate_weights_standard(history History) Weights {
 // Weight calculation with module elimination
 // if a module's success rate is below the average success rate across all modules, its weight is set to zero
 func calculate_weights_elimination(history History) Weights {
-	successes := make([]float64, len(history))
-	rounds := make([]float64, len(history))
 	weights := make(Weights, len(history))
 	var totalSuccessRate float64
 	for i := range history {
-		successes[i] = history[i][0]
-		rounds[i] = history[i][1]
-		successRate := successes[i] / rounds[i]
+		successRate := history[i][0] / history[i][1]
 		totalSuccessRate += successRate
 	}
 	averageSuccessRate := totalSuccessRate / float64(len(history))
 	for i := range history {
-		successRate := successes[i] / rounds[i]
+		successRate := history[i][0] / history[i][1]
 		if successRate < averageSuccessRate {
 			weights[i] = 0
 		} else {
