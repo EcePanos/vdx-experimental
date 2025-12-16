@@ -17,8 +17,8 @@ func main() {
 		fmt.Println("Usage: vdxcli [-j N] <input.csv>")
 		os.Exit(1)
 	}
-	inputFile := flag.Arg(0)
-	outputFile := "output.csv"
+	inputFile := "/data/" + flag.Arg(0)
+	outputFile := "/data/output.csv"
 
 	jobs, err := vdx.ReadCSVRows(inputFile)
 	if err != nil {
