@@ -1,0 +1,1 @@
+/usr/bin/cc CMakeFiles/vdx_c.dir/src/main.c.o CMakeFiles/vdx_c.dir/src/vdx.c.o -o vdx_c 

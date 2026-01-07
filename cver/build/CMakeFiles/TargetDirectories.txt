@@ -1,0 +1,3 @@
+/home/panos/test/go/vdx/cver/build/CMakeFiles/vdx_c.dir
+/home/panos/test/go/vdx/cver/build/CMakeFiles/edit_cache.dir
+/home/panos/test/go/vdx/cver/build/CMakeFiles/rebuild_cache.dir
