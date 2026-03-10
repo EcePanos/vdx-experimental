@@ -1,0 +1,12 @@
+cver/build
+**/CMakeCache.txt
+**/CMakeFiles
+**/*.o
+**/*.a
+**/*.so
+**/*.dylib
+**/.DS_Store
+**/.idea
+**/.vscode
+python/__pycache__
+**/*.pyc

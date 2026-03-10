@@ -27,3 +27,6 @@ target_compile_options(vdx_c PRIVATE
 -Wextra
 -Wpedantic
 )
+
+find_package(Threads REQUIRED)
+target_link_libraries(vdx_c PRIVATE m Threads::Threads)

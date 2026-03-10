@@ -1,0 +1,8 @@
+FROM python:3.12-alpine AS build
+WORKDIR /app
+COPY python ./python
+
+FROM python:3.12-alpine
+WORKDIR /app
+COPY --from=build /app/python ./python
+ENTRYPOINT ["python", "/app/python/main.py"]
